@@ -1,13 +1,12 @@
-const Project = require('../models/project');
-const Task = require('../models/task');
+const models = require('../models');
 const logger = require('../utils/logger');
 
 // Fetch dashboard data for chart (project and task counts by status)
 const getDashboardData = async (req, res) => {
   try {
-    const projects = await Project.count();
-    const tasks = await Task.findAll({
-      attributes: ['status', [Task.sequelize.fn('COUNT', Task.sequelize.col('status')), 'count']],
+    const projects = await models.Project.count();
+    const tasks = await models.Task.findAll({
+      attributes: ['status', [models.Task.sequelize.fn('COUNT', models.Task.sequelize.col('status')), 'count']],
       group: ['status'],
     });
     const data = {

@@ -34,10 +34,10 @@ app.use(limiter);
 // Mount routes
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
+app.use('/dashboard', dashboardRoutes);
 app.use('/projects', projectRoutes);
 app.use('/projects/:projectId/tasks', taskRoutes);
 app.use('/projects/:projectId/tasks/:taskId/comments', commentRoutes);
-app.use('/dashboard', dashboardRoutes);
 
 // Serve Swagger UI
 swaggerParser.parse('./docs/swagger.json').then(api => {
