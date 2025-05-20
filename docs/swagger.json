@@ -1,0 +1,391 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Project Management API",
+    "version": "1.0.0",
+    "description": "API for managing projects, tasks, and comments"
+  },
+  "servers": [
+    { "url": "http://localhost:3000" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "username": { "type": "string" },
+          "email": { "type": "string" },
+          "role": { "type": "string", "enum": ["admin", "manager", "user"] }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "ownerId": { "type": "integer" }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "in_progress", "completed"] },
+          "projectId": { "type": "integer" },
+          "assigneeId": { "type": "integer" },
+          "dueDate": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "content": { "type": "string" },
+          "taskId": { "type": "integer" },
+          "authorId": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  },
+  "security": [
+    { "BearerAuth": [] }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new user",
+        "tags": ["Auth"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" },
+                  "email": { "type": "string" },
+                  "role": { "type": "string", "enum": ["admin", "manager", "user"] }
+                },
+                "required": ["username", "password", "email"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "400": { "description": "Invalid input" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login a user",
+        "tags": ["Auth"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" }
+                },
+                "required": ["username", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/projects": {
+      "get": {
+        "summary": "Get all projects",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of projects", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Project" } } } } },
+          "500": { "description": "Server error" }
+        }
+      },
+      "post": {
+        "summary": "Create a project",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Project created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Project" } } } },
+          "403": { "description": "Forbidden" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/projects/{id}": {
+      "put": {
+        "summary": "Update a project",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Project updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Project" } } } },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Project not found" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a project",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Project deleted" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Project not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/projects/{projectId}/tasks": {
+      "get": {
+        "summary": "Get all tasks for a project",
+        "tags": ["Tasks"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "projectId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "List of tasks", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Task" } } } } },
+          "403": { "description": "Forbidden" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "post": {
+        "summary": "Create a task",
+        "tags": ["Tasks"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "projectId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "status": { "type": "string", "enum": ["pending", "in_progress", "completed"] },
+                  "assigneeId": { "type": "integer" },
+                  "dueDate": { "type": "string", "format": "date-time" }
+                },
+                "required": ["title"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Task created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "400": { "description": "Invalid input" },
+          "403": { "description": "Forbidden" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/projects/{projectId}/tasks/{id}": {
+      "put": {
+        "summary": "Update a task",
+        "tags": ["Tasks"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "projectId", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "status": { "type": "string", "enum": ["pending", "in_progress", "completed"] },
+                  "assigneeId": { "type": "integer" },
+                  "dueDate": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Task updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "400": { "description": "Invalid input" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Task not found" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a task",
+        "tags": ["Tasks"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "projectId", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Task deleted" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Task not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/projects/{projectId}/tasks/{taskId}/comments": {
+      "get": {
+        "summary": "Get all comments for a task",
+        "tags": ["Comments"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "projectId", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "taskId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "List of comments", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Comment" } } } } },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Task not found" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "post": {
+        "summary": "Create a comment",
+        "tags": ["Comments"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "projectId", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "taskId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": { "type": "string" }
+                },
+                "required": ["content"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Comment created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Comment" } } } },
+          "400": { "description": "Invalid input" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Task not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/projects/{projectId}/tasks/{taskId}/comments/{id}": {
+      "delete": {
+        "summary": "Delete a comment",
+        "tags": ["Comments"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "projectId", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "taskId", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Comment deleted" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Comment not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "Get all users",
+        "tags": ["Users"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of users", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/User" } } } } },
+          "403": { "description": "Forbidden" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "summary": "Get dashboard data",
+        "tags": ["Dashboard"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Dashboard data", "content": { "application/json": { "schema": { "type": "object", "properties": { "projects": { "type": "integer" }, "tasks": { "type": "object", "properties": { "pending": { "type": "integer" }, "in_progress": { "type": "integer" }, "completed": { "type": "integer" } } } } } } } },
+          "500": { "description": "Server error" }
+        }
+      }
+    }
+  }
+}
