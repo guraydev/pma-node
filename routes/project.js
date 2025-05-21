@@ -12,7 +12,7 @@ router.use(auth);
 // Get all projects
 router.get('/', projectController.getProjects);
 
-// Create a project (admin/manager only)
+// Create a project  (admin/manager only)
 router.post('/', restrictTo(['admin', 'manager']), validateProject, projectController.createProject);
 
 // Update a project (admin/manager, owner only)
